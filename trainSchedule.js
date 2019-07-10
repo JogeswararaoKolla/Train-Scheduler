@@ -33,10 +33,34 @@ $(document).ready(function (eventReadyObj) {
         console.log(trainUpdateObj);
         //Remove 1 element from index and insert new element..it is like element replace
         snapReadonceObjValues.splice(snapChangedObjIndex,1,snapChangedValueObj);
-        console.log("Inside the child_changed function End");
-
-
         
+        // First Time (pushed back 1 year to make sure it comes before current time)
+        let firstTimeConverted = moment(snapChangedValueObj.trainTime, "HH:mm").subtract(1, "years");
+        // Current Time
+        let diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+        // Time apart (remainder)
+        let tRemainder = diffTime % snapChangedValueObj.frequency;
+        // Minute Until Train
+        let tMinutesTillTrain = snapChangedValueObj.frequency - tRemainder;
+        // Next Train
+        let nextTrain = moment().add(tMinutesTillTrain, "minutes").format("HH:mm A");
+
+        const tRow = $("<tr>").attr({ 'id': snapChangedKeyObj }).append(
+            $("<td>").text(snapChangedValueObj.trainName),
+            $("<td>").text(snapChangedValueObj.destination),
+            $("<td>").text(snapChangedValueObj.frequency),
+            $("<td>").text(nextTrain),
+            $("<td>").text(tMinutesTillTrain).append($("<button>").attr({ 'id': snapChangedKeyObj, class: "tRowButton" }).css({ float: "right" }).text("X"))
+        );
+        // .html() Description: Get the HTML contents of the first element in the set of matched elements.
+        // .html( htmlString) Description: Set the HTML contents of each element in the set of matched elements
+        const tRow2 = $("#" + snapChangedKeyObj);
+        console.log($(tRow).html());
+        console.log(tRow2);
+        console.log(tRow2.html());
+        tRow2.html($(tRow).html());
+        console.log(tRow);
+        console.log("Inside the child_changed function End");
     });
 
     databaseURL.ref("/trainschedules").on('child_removed', function (snapRemovedObj) {
