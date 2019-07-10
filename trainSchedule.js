@@ -12,23 +12,25 @@ firebase.initializeApp(firebaseConfig);
 
 let trainAddObj = {};
 let trainUpdateObj = {};
-let snapReadonceObjKeys=[];
-let snapReadonceObjValues=[];
+let snapReadonceObjKeys = [];
+let snapReadonceObjValues = [];
 let databaseURL = firebase.database();
 let validInputsAdd = true;
 let validInputsUpdate = true;
 
 $(document).ready(function (eventReadyObj) {
 
-    databaseURL.ref("/trainschedules").on('child_changed', function (snapChangedObj) {
-        console.log(snapChangedObj.key);
-        console.log(snapChangedObj.val());
-    });
+    // databaseURL.ref("/trainschedules").on('child_changed', function (snapChangedObj) {
+    //     console.log(snapChangedObj.key);
+    //     console.log(snapChangedObj.val());
+    // });
 
     databaseURL.ref("/trainschedules").on('child_removed', function (snapRemovedObj) {
-        console.log("Inside the Child Removed Function");
-        console.log(snapRemovedObj.key);
-        console.log(snapRemovedObj.val());
+        const snapRemovedObjIndex = snapReadonceObjKeys.indexOf(snapRemovedObj.key);
+        //The splice() method changes the contents of an array by removing or replacing existing elements and/or adding new elements
+        snapReadonceObjKeys.splice(snapRemovedObjIndex, 1);
+        snapReadonceObjValues.splice(snapRemovedObjIndex, 1);
+        console.log(snapReadonceObjKeys, snapReadonceObjValues);
         //Remove the element from DOM
         $("tr").remove("#" + snapRemovedObj.key);
     });
@@ -41,14 +43,10 @@ $(document).ready(function (eventReadyObj) {
     // });
 
     // Method triggers once at page load and runs every time a new child is added 
-    databaseURL.ref("/trainschedules").on('child_added', function(snapChildAddedObj) {
-        console.log(snapChildAddedObj.key);
-        console.log(snapChildAddedObj.val());
+    databaseURL.ref("/trainschedules").on('child_added', function (snapChildAddedObj) {
 
         snapReadonceObjKeys.push(snapChildAddedObj.key);
         snapReadonceObjValues.push(snapChildAddedObj.val());
-        console.log(snapReadonceObjKeys);
-        console.log(snapReadonceObjValues);
 
         const ChildAddedObj = snapChildAddedObj.val();
         let tFrequency = ChildAddedObj.frequency;
@@ -56,20 +54,14 @@ $(document).ready(function (eventReadyObj) {
 
         // First Time (pushed back 1 year to make sure it comes before current time)
         let firstTimeConverted = moment(firstTime, "HH:mm").subtract(1, "years");
-
         // Current Time
         let currentTime = moment().format("YYYY dddd,MMMM,DD HH:mm A");
-        console.log("DATE & TIME: " + currentTime);
-
         // Difference between the times
         let diffTime = moment().diff(moment(firstTimeConverted), "minutes");
-
         // Time apart (remainder)
         let tRemainder = diffTime % tFrequency;
-
         // Minute Until Train
         let tMinutesTillTrain = tFrequency - tRemainder;
-
         // Next Train
         let nextTrain = moment().add(tMinutesTillTrain, "minutes").format("HH:mm A");
 
@@ -80,7 +72,7 @@ $(document).ready(function (eventReadyObj) {
             $("<td>").text(nextTrain),
             $("<td>").text(tMinutesTillTrain).append($("<button>").attr({ 'id': snapChildAddedObj.key, class: "tRowButton" }).css({ float: "right" }).text("X"))
         );
-        
+
         $("#trainSchedule > tbody").append(tRow);
 
     });
@@ -102,7 +94,6 @@ $(document).ready(function (eventReadyObj) {
         console.log(trainAddObj);
 
         $("form :input").each(function (index, element) {
-            //  console.log("index: " + index,element,"attribute:" + $(this).attr('id'),"Value: " + $(this).val().trim());
             if ($(this).val().trim() == "") {
                 //Select element by ID
                 $("#" + $(this).attr('id')).focus();
@@ -112,9 +103,10 @@ $(document).ready(function (eventReadyObj) {
             }
         });
 
-        if (validInputs) {
+        if (validInputsAdd) {
             //call the Firebase push method to store the values in array and generate a firebase key for every row 
             databaseURL.ref("/trainschedules").push(trainAddObj);
+            console.log(snapReadonceObjKeys, snapReadonceObjValues);
             //Clear the text box values 
             $("#trainName").val("");
             $("#destination").val("");
@@ -125,39 +117,39 @@ $(document).ready(function (eventReadyObj) {
 
     $("#trainUpdateButton").click(function (eventUpdateObj) {
         eventUpdateObj.preventDefault();
+
         let foundChild = false;
         let ChildTrainNameKey = "";
 
         trainUpdateObj = {};
         trainUpdateObj.trainName = $("#trainName").val().trim();
 
-        // if (trainUpdateObj.trainName == "") {
-        //     validInputsUpdate = false;
-        //     alert("Enter the data for the field: " + $("#trainName").attr('id'));
-        //     $("#trainName").focus();
-        //     console.log(validInputsUpdate);
-        // }
-        // else if (trainUpdateObj.trainName != "") {
-        //     validInputsUpdate = true;
-        // }
+        if (trainUpdateObj.trainName == "") {
+            validInputsUpdate = false;
+            alert("Enter the data for the field: " + $("#trainName").attr('id'));
+            $("#trainName").focus();
+        }
+        else if (trainUpdateObj.trainName != "") {
+            validInputsUpdate = true;
+        }
 
         $("form :input").each(function (index, element) {
-            console.log("index: " + index, element, "attribute:" + $(this).attr('id'), "Value: " + $(this).val().trim());
+            // console.log("index: " + index, element, "attribute:" + $(this).attr('id'), "Value: " + $(this).val().trim());
             if ($(this).val().trim() != "") {
                 //Select element by ID
                 const element = $(this).attr('id');
-                console.log(element);
                 trainUpdateObj[element] = $(this).val().trim();
-                console.log(trainUpdateObj);
+                
             }
         });
 
-        if (validInputsUpdate) {
+        console.log(trainUpdateObj);
+
+        if (validInputsUpdate) 
+        {
             databaseURL.ref("/trainschedules").once('value')
-                .then(function (snapshotObj) {
-                    snapshotObj.forEach(function (childSnapObj) {
-                        console.log(childSnapObj.val());
-                        console.log(childSnapObj.key);
+                .then(function (snapReadonceObj) {
+                    snapReadonceObj.forEach(function (childSnapObj) {
                         let trainUpdateObjlocal = {};
                         trainUpdateObjlocal = childSnapObj.val();
                         if (trainUpdateObjlocal.trainName == $("#trainName").val().trim()) {
@@ -169,37 +161,23 @@ $(document).ready(function (eventReadyObj) {
 
                     if (foundChild) {
                         trainUpdateObjlocal = {};
-                        databaseURL.ref("/trainschedules").child(ChildTrainNameKey).once("value")
-                            .then(function (snapChildObj) {
-                                console.log(snapChildObj.key);
-                                console.log(snapChildObj.val());
-                            });
-
                         if (Object.keys(trainUpdateObj).length == 1) {
-                            alert("Enter the values to the input fields");
+                            alert("Update atleast one input element fields");
                         }
                         else {
-
                             console.log(trainUpdateObj);
-                            let result = databaseURL.ref("/trainschedules").child(ChildTrainNameKey).update(trainUpdateObj);
-
-                            console.log(result);
+                            databaseURL.ref("/trainschedules").child(ChildTrainNameKey).update(trainUpdateObj);
                             //Clear the text box values 
                             $("#trainName").val("");
                             $("#destination").val("");
                             $("#trainTime").val("");
                             $("#frequency").val("");
-                            window.location.reload();
                         }
 
                     }
-                    // else {
-                    //     alert("Enter valid Train Name to Update!!");
-                    // }
-
-                })
-                .catch(function (errorUpdateObj) {
-                    console.log(errorUpdateObj);
+                    else {
+                        alert("Enter valid Train Name to Update!!");
+                    }
                 });
         }
 
