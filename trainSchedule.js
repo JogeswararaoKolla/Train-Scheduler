@@ -20,14 +20,29 @@ let validInputsUpdate = true;
 
 $(document).ready(function (eventReadyObj) {
 
-    // databaseURL.ref("/trainschedules").on('child_changed', function (snapChangedObj) {
-    //     console.log(snapChangedObj.key);
-    //     console.log(snapChangedObj.val());
-    // });
+    databaseURL.ref("/trainschedules").on('child_changed', function (snapChangedObj) {
+        let snapChangedValueObj = {};
+        let snapChangedKeyObj={};
+        snapChangedValueObj = snapChangedObj.val();
+        snapChangedKeyObj=snapChangedObj.key;
+
+        const snapChangedObjIndex = snapReadonceObjKeys.indexOf(snapChangedKeyObj);
+        console.log("Inside the child_changed function Start");
+        console.log(snapChangedKeyObj);
+        console.log(snapChangedValueObj);
+        console.log(trainUpdateObj);
+        //Remove 1 element from index and insert new element..it is like element replace
+        snapReadonceObjValues.splice(snapChangedObjIndex,1,snapChangedValueObj);
+        console.log("Inside the child_changed function End");
+
+
+        
+    });
 
     databaseURL.ref("/trainschedules").on('child_removed', function (snapRemovedObj) {
         const snapRemovedObjIndex = snapReadonceObjKeys.indexOf(snapRemovedObj.key);
         //The splice() method changes the contents of an array by removing or replacing existing elements and/or adding new elements
+        //Remove 1 element from an index 
         snapReadonceObjKeys.splice(snapRemovedObjIndex, 1);
         snapReadonceObjValues.splice(snapRemovedObjIndex, 1);
         console.log(snapReadonceObjKeys, snapReadonceObjValues);
@@ -72,7 +87,6 @@ $(document).ready(function (eventReadyObj) {
             $("<td>").text(nextTrain),
             $("<td>").text(tMinutesTillTrain).append($("<button>").attr({ 'id': snapChildAddedObj.key, class: "tRowButton" }).css({ float: "right" }).text("X"))
         );
-
         $("#trainSchedule > tbody").append(tRow);
 
     });
@@ -117,7 +131,7 @@ $(document).ready(function (eventReadyObj) {
 
     $("#trainUpdateButton").click(function (eventUpdateObj) {
         eventUpdateObj.preventDefault();
-
+        console.log("Inside the trainUpdateButton Start");
         let foundChild = false;
         let ChildTrainNameKey = "";
 
@@ -139,14 +153,14 @@ $(document).ready(function (eventReadyObj) {
                 //Select element by ID
                 const element = $(this).attr('id');
                 trainUpdateObj[element] = $(this).val().trim();
-                
+
             }
         });
 
+        //logging the update object
         console.log(trainUpdateObj);
 
-        if (validInputsUpdate) 
-        {
+        if (validInputsUpdate) {
             databaseURL.ref("/trainschedules").once('value')
                 .then(function (snapReadonceObj) {
                     snapReadonceObj.forEach(function (childSnapObj) {
@@ -160,12 +174,11 @@ $(document).ready(function (eventReadyObj) {
                     });
 
                     if (foundChild) {
-                        trainUpdateObjlocal = {};
                         if (Object.keys(trainUpdateObj).length == 1) {
                             alert("Update atleast one input element fields");
                         }
                         else {
-                            console.log(trainUpdateObj);
+                            //Firebase method to update the child object 
                             databaseURL.ref("/trainschedules").child(ChildTrainNameKey).update(trainUpdateObj);
                             //Clear the text box values 
                             $("#trainName").val("");
@@ -173,14 +186,13 @@ $(document).ready(function (eventReadyObj) {
                             $("#trainTime").val("");
                             $("#frequency").val("");
                         }
-
                     }
                     else {
                         alert("Enter valid Train Name to Update!!");
                     }
                 });
         }
-
+        console.log("Inside the trainUpdateButton End");
     });
 
 });
