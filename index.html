@@ -50,10 +50,11 @@
                     <div class="card-body" style="background-color:rgb(42, 120, 165)">
                         Add Train
                     </div>
+                    <br>
                     <form>
                         <div class="form-group px-md-3">
                             <label for="trainName">Train Name</label>
-                            <input class="form-control" type="text" id="trainName">
+                            <input class="form-control" type="text" id="trainName" required>
                         </div>
                         <div class="form-group px-md-3">
                             <label for="destination">Destination</label>
@@ -70,7 +71,7 @@
                     </form>
                     <div class="p-md-3">
                         <button type="button" class="btn btn-primary" id="trainAddButton">Add</button>
-                        <!-- <button type="button" class="btn btn-primary" id="trainUpdateButton">Update</button> -->
+                        <button type="button" class="btn btn-primary" id="trainUpdateButton">Update</button>
                     </div>
                 </div>
             </div>
@@ -81,5 +82,4 @@
 <!-- The core Firebase JS SDK is always required and must be listed first -->
 <script src="https://www.gstatic.com/firebasejs/6.2.4/firebase.js"></script>
 <script src="trainSchedule.js"></script>
-
 </html>
